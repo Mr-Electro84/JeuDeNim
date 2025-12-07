@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de Nim - Les Allumettes</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='45' y='20' width='10' height='70' rx='2' fill='%23d4a574'/><ellipse cx='50' cy='15' rx='8' ry='12' fill='%23ff6b35'/><ellipse cx='50' cy='12' rx='5' ry='8' fill='%23ffcc02'/></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #2d3436 0%, #1e272e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #ffd700;
+            font-size: 1.8rem;
+        }
+
+        .modal-section {
+            margin-bottom: 20px;
+        }
+
+        .modal-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4fc3f7;
+        }
+
+        .modal-section select,
+        .modal-section input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .modal-section select option {
+            background: #2d3436;
+            color: #fff;
+        }
+
+        .piles-config {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .pile-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pile-input label {
+            min-width: 80px;
+            margin-bottom: 0;
+        }
+
+        .pile-input input {
+            flex: 1;
+        }
+
+        .mode-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .mode-option {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .mode-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .mode-option.selected {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .mode-option h4 {
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .mode-option p {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(56, 239, 125, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-small {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+
+        .btn-tiny {
+            padding: 8px 15px;
+            font-size: 0.8rem;
+        }
+
+        .btn-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+            display: none;
+        }
+
+        .game-container.active {
+            display: block;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .game-header h1 {
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .game-mode-display {
+            font-size: 1rem;
+            color: #ffd700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .mode-text {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .turn-indicator {
+            font-size: 1.3rem;
+            color: #4fc3f7;
+        }
+
+        .thinking {
+            color: #ffd700;
+            font-style: italic;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .thinking.show {
+            display: block;
+        }
+
+        .stats-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .win-probability {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .win-probability-label {
+            font-size: 0.9rem;
+            color: #4fc3f7;
+            margin-bottom: 5px;
+        }
+
+        .win-probability-value {
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .win-probability-bar {
+            width: 150px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .win-probability-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #38ef7d 0%, #ffd700 50%, #f5576c 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .swap-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .piles-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+
+        .pile {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .pile:hover:not(.disabled) {
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .pile.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .pile.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pile-label {
+            font-size: 0.9rem;
+            color: #4fc3f7;
+            margin-bottom: 10px;
+        }
+
+        .pile-count {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffd700;
+            margin-top: 10px;
+        }
+
+        .sticks-display {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            min-height: 100px;
+            align-items: flex-end;
+        }
+
+        .match {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.4s ease;
+        }
+
+        .match.removed {
+            opacity: 0;
+            transform: translateY(-30px) rotate(30deg);
+        }
+
+        .match-head {
+            width: 14px;
+            height: 18px;
+            background: radial-gradient(ellipse at center top, #ff6b35 0%, #d63031 40%, #a52a2a 100%);
+            border-radius: 50% 50% 40% 40%;
+            position: relative;
+            box-shadow: 0 0 8px rgba(255, 107, 53, 0.6), inset 0 -3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .match-head::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 4px;
+            width: 5px;
+            height: 6px;
+            background: radial-gradient(ellipse, #ffcc02 0%, #ff9500 100%);
+            border-radius: 50%;
+            opacity: 0.9;
+        }
+
+        .match-stick {
+            width: 8px;
+            height: 65px;
+            background: linear-gradient(90deg, #c4a77d 0%, #deb887 30%, #d4a574 70%, #b8956e 100%);
+            border-radius: 0 0 3px 3px;
+            box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .match-stick::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 1px;
+            width: 2px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-take {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-take:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-take:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .selected-info {
+            font-size: 1rem;
+            color: #4fc3f7;
+            margin-bottom: 15px;
+            min-height: 24px;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .message.win {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            display: block;
+        }
+
+        .message.lose {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            display: block;
+        }
+
+        .rules-modal .modal {
+            position: relative;
+            max-width: 550px;
+        }
+
+        .rules-content {
+            text-align: left;
+        }
+
+        .rules-content h3 {
+            color: #ffd700;
+            margin: 20px 0 10px;
+        }
+
+        .rules-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .rules-content ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .rules-content .highlight {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .game-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .game-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .pile {
+                min-width: 100px;
+                padding: 15px;
+            }
+
+            .match-stick {
+                height: 50px;
+            }
+
+            .match-head {
+                width: 12px;
+                height: 15px;
+            }
+
+            .stats-box {
+                flex-direction: column;
+            }
+
+            .header-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-overlay active" id="config-modal">
+        <div class="modal">
+            <h2>Configuration de la partie</h2>
+            
+            <div class="modal-section">
+                <label>Mode de jeu :</label>
+                <div class="mode-options">
+                    <div class="mode-option selected" data-mode="misere" onclick="selectMode('misere')">
+                        <h4>Misère</h4>
+                        <p>Celui qui prend la dernière allumette <strong>perd</strong></p>
+                    </div>
+                    <div class="mode-option" data-mode="normal" onclick="selectMode('normal')">
+                        <h4>Normal</h4>
+                        <p>Celui qui prend la dernière allumette <strong>gagne</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <label for="num-piles">Nombre de tas :</label>
+                <select id="num-piles" onchange="updatePilesConfig()">
+                    <option value="1">1 tas</option>
+                    <option value="2">2 tas</option>
+                    <option value="3" selected>3 tas</option>
+                    <option value="4">4 tas</option>
+                    <option value="5">5 tas</option>
+                </select>
+            </div>
+
+            <div class="modal-section">
+                <label>Allumettes par tas :</label>
+                <div class="piles-config" id="piles-config"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="startGame()">Commencer la partie</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="rules-modal">
+        <div class="modal">
+            <button class="btn-close" onclick="closeRules()">&times;</button>
+            <h2>Règles du jeu</h2>
+            <div class="rules-content" id="rules-content"></div>
+        </div>
+    </div>
+
+    <div class="game-container" id="game-container">
+        <div class="game-header">
+            <h1>Jeu de Nim</h1>
+            <div class="header-buttons">
+                <button class="btn btn-secondary btn-small" onclick="showRules()">Règles</button>
+                <button class="btn btn-secondary btn-small" onclick="showConfig()">Nouvelle partie</button>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <div class="game-mode-display" id="game-mode-container">
+                <span class="mode-text" id="game-mode-text"></span>
+                <button class="btn btn-warning btn-tiny" onclick="toggleGameMode()">Changer de mode</button>
+            </div>
+            <div class="turn-indicator" id="turn-indicator">C'est votre tour</div>
+            <div class="thinking" id="thinking">L'ordinateur réfléchit...</div>
+        </div>
+
+        <div class="stats-box">
+            <div class="win-probability">
+                <div class="win-probability-label">Chances de victoire de l'ordinateur</div>
+                <div class="win-probability-value" id="win-probability">0%</div>
+                <div class="win-probability-bar">
+                    <div class="win-probability-fill" id="win-probability-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="swap-controls">
+                <button class="btn btn-info btn-tiny" onclick="swapPlayers()" id="swap-btn">Échanger les joueurs</button>
+            </div>
+        </div>
+
+        <div class="piles-container" id="piles-container"></div>
+
+        <div class="selected-info" id="selected-info"></div>
+
+        <div class="controls">
+            <button class="btn btn-take" id="take-1" onclick="takeMatches(1)" disabled>Prendre 1</button>
+            <button class="btn btn-take" id="take-2" onclick="takeMatches(2)" disabled>Prendre 2</button>
+            <button class="btn btn-take" id="take-3" onclick="takeMatches(3)" disabled>Prendre 3</button>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        let gameMode = 'misere';
+        let piles = [];
+        let selectedPile = null;
+        let isPlayerTurn = true;
+        let gameOver = false;
+        let computerTimeout = null;
+
+        function selectMode(mode) {
+            gameMode = mode;
+            document.querySelectorAll('.mode-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.mode === mode);
+            });
+        }
+
+        function updatePilesConfig() {
+            const numPiles = parseInt(document.getElementById('num-piles').value);
+            const container = document.getElementById('piles-config');
+            const defaultValues = [3, 5, 7, 9, 11];
+            
+            container.innerHTML = '';
+            for (let i = 0; i < numPiles; i++) {
+                const div = document.createElement('div');
+                div.className = 'pile-input';
+                div.innerHTML = `
+                    <label>Tas ${i + 1} :</label>
+                    <input type="number" id="pile-${i}" min="1" max="20" value="${defaultValues[i] || 5}">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function startGame() {
+            const numPiles = parseInt(document.getElementById('num-piles').value);
+            piles = [];
+            
+            for (let i = 0; i < numPiles; i++) {
+                const value = parseInt(document.getElementById(`pile-${i}`).value) || 5;
+                piles.push(Math.min(Math.max(value, 1), 20));
+            }
+
+            selectedPile = null;
+            isPlayerTurn = true;
+            gameOver = false;
+
+            document.getElementById('config-modal').classList.remove('active');
+            document.getElementById('game-container').classList.add('active');
+            
+            updateGameModeDisplay();
+            renderPiles();
+            updateControls();
+            updateTurnIndicator();
+            updateWinProbability();
+            document.getElementById('message').className = 'message';
+            document.getElementById('selected-info').textContent = '';
+        }
+
+        function updateGameModeDisplay() {
+            const modeText = gameMode === 'misere' 
+                ? 'Mode Misère - Dernier perd'
+                : 'Mode Normal - Dernier gagne';
+            document.getElementById('game-mode-text').textContent = modeText;
+        }
+
+        function toggleGameMode() {
+            if (gameOver) return;
+            
+            gameMode = gameMode === 'misere' ? 'normal' : 'misere';
+            updateGameModeDisplay();
+            updateWinProbability();
+        }
+
+        function swapPlayers() {
+            if (gameOver) return;
+            
+            if (computerTimeout) {
+                clearTimeout(computerTimeout);
+                computerTimeout = null;
+            }
+            
+            document.getElementById('thinking').classList.remove('show');
+            
+            isPlayerTurn = !isPlayerTurn;
+            selectedPile = null;
+            document.getElementById('selected-info').textContent = '';
+            
+            renderPiles();
+            updateControls();
+            updateTurnIndicator();
+            updateWinProbability();
+
+            if (!isPlayerTurn) {
+                document.getElementById('thinking').classList.add('show');
+                computerTimeout = setTimeout(() => {
+                    computerTurn();
+                }, 800 + Math.random() * 700);
+            }
+        }
+
+        function calculateWinProbability() {
+            const total = piles.reduce((a, b) => a + b, 0);
+            if (total === 0) return 0;
+
+            const xorSum = piles.reduce((a, b) => a ^ b, 0);
+            const nonEmpty = piles.filter(p => p > 0);
+            const nonEmptyCount = nonEmpty.length;
+
+            let computerInWinningPosition;
+
+            if (gameMode === 'misere') {
+                const allOnes = nonEmpty.every(p => p === 1);
+                
+                if (allOnes) {
+                    if (isPlayerTurn) {
+                        computerInWinningPosition = nonEmptyCount % 2 === 1;
+                    } else {
+                        computerInWinningPosition = nonEmptyCount % 2 === 0;
+                    }
+                } else {
+                    if (isPlayerTurn) {
+                        computerInWinningPosition = xorSum === 0;
+                    } else {
+                        computerInWinningPosition = xorSum !== 0;
+                    }
+                }
+            } else {
+                if (isPlayerTurn) {
+                    computerInWinningPosition = xorSum === 0;
+                } else {
+                    computerInWinningPosition = xorSum !== 0;
+                }
+            }
+
+            if (computerInWinningPosition) {
+                const complexity = Math.min(total / 5, 1);
+                return Math.round(85 + complexity * 15);
+            } else {
+                const complexity = Math.min(total / 10, 1);
+                return Math.round(15 + complexity * 20);
+            }
+        }
+
+        function updateWinProbability() {
+            if (gameOver) {
+                document.getElementById('win-probability').textContent = '-';
+                document.getElementById('win-probability-fill').style.width = '0%';
+                return;
+            }
+
+            const probability = calculateWinProbability();
+            document.getElementById('win-probability').textContent = probability + '%';
+            document.getElementById('win-probability-fill').style.width = probability + '%';
+        }
+
+        function renderPiles() {
+            const container = document.getElementById('piles-container');
+            container.innerHTML = '';
+
+            piles.forEach((count, index) => {
+                const pile = document.createElement('div');
+                pile.className = 'pile' + (selectedPile === index ? ' selected' : '') + (count === 0 || !isPlayerTurn || gameOver ? ' disabled' : '');
+                pile.onclick = () => selectPile(index);
+
+                let matchesHTML = '';
+                for (let i = 0; i < count; i++) {
+                    matchesHTML += `
+                        <div class="match" id="match-${index}-${i}">
+                            <div class="match-head"></div>
+                            <div class="match-stick"></div>
+                        </div>
+                    `;
+                }
+
+                pile.innerHTML = `
+                    <div class="pile-label">Tas ${index + 1}</div>
+                    <div class="sticks-display">${matchesHTML}</div>
+                    <div class="pile-count">${count}</div>
+                `;
+
+                container.appendChild(pile);
+            });
+        }
+
+        function selectPile(index) {
+            if (gameOver || !isPlayerTurn || piles[index] === 0) return;
+            
+            selectedPile = index;
+            renderPiles();
+            updateControls();
+            document.getElementById('selected-info').textContent = `Tas ${index + 1} sélectionné (${piles[index]} allumette${piles[index] > 1 ? 's' : ''})`;
+        }
+
+        function updateControls() {
+            const btn1 = document.getElementById('take-1');
+            const btn2 = document.getElementById('take-2');
+            const btn3 = document.getElementById('take-3');
+            const swapBtn = document.getElementById('swap-btn');
+
+            if (gameOver || !isPlayerTurn || selectedPile === null) {
+                btn1.disabled = true;
+                btn2.disabled = true;
+                btn3.disabled = true;
+            } else {
+                const count = piles[selectedPile];
+                btn1.disabled = count < 1;
+                btn2.disabled = count < 2;
+                btn3.disabled = count < 3;
+            }
+
+            swapBtn.disabled = gameOver;
+        }
+
+        function updateTurnIndicator() {
+            const indicator = document.getElementById('turn-indicator');
+            if (!gameOver) {
+                indicator.textContent = isPlayerTurn ? "C'est votre tour - Sélectionnez un tas" : "Tour de l'ordinateur";
+            }
+        }
+
+        function takeMatches(count) {
+            if (gameOver || !isPlayerTurn || selectedPile === null || piles[selectedPile] < count) return;
+
+            animateRemoval(selectedPile, count, () => {
+                piles[selectedPile] -= count;
+                
+                if (checkGameOver(true)) {
+                    renderPiles();
+                    updateWinProbability();
+                    return;
+                }
+
+                selectedPile = null;
+                isPlayerTurn = false;
+                document.getElementById('selected-info').textContent = '';
+                renderPiles();
+                updateControls();
+                updateTurnIndicator();
+                updateWinProbability();
+
+                document.getElementById('thinking').classList.add('show');
+                
+                computerTimeout = setTimeout(() => {
+                    computerTurn();
+                }, 800 + Math.random() * 700);
+            });
+        }
+
+        function animateRemoval(pileIndex, count, callback) {
+            const currentCount = piles[pileIndex];
+            for (let i = 0; i < count; i++) {
+                const match = document.getElementById(`match-${pileIndex}-${currentCount - 1 - i}`);
+                if (match) {
+                    match.classList.add('removed');
+                }
+            }
+            setTimeout(callback, 400);
+        }
+
+        function checkGameOver(isPlayer) {
+            const total = piles.reduce((a, b) => a + b, 0);
+            
+            if (total === 0) {
+                gameOver = true;
+                const message = document.getElementById('message');
+                const indicator = document.getElementById('turn-indicator');
+                document.getElementById('thinking').classList.remove('show');
+
+                let playerWins;
+                if (gameMode === 'misere') {
+                    playerWins = !isPlayer;
+                } else {
+                    playerWins = isPlayer;
+                }
+
+                if (playerWins) {
+                    message.textContent = "Félicitations ! Vous avez gagné !";
+                    message.className = 'message win';
+                    indicator.textContent = "Partie terminée - Victoire !";
+                } else {
+                    message.textContent = "Dommage ! L'ordinateur a gagné.";
+                    message.className = 'message lose';
+                    indicator.textContent = "Partie terminée - Défaite";
+                }
+                
+                updateControls();
+                return true;
+            }
+            return false;
+        }
+
+        function computerTurn() {
+            document.getElementById('thinking').classList.remove('show');
+            
+            const move = calculateOptimalMove();
+            
+            animateRemoval(move.pile, move.count, () => {
+                piles[move.pile] -= move.count;
+                
+                if (checkGameOver(false)) {
+                    renderPiles();
+                    updateWinProbability();
+                    return;
+                }
+
+                isPlayerTurn = true;
+                renderPiles();
+                updateControls();
+                updateTurnIndicator();
+                updateWinProbability();
+            });
+        }
+
+        function calculateOptimalMove() {
+            const nonEmpty = piles.map((count, index) => ({count, index})).filter(p => p.count > 0);
+            
+            if (nonEmpty.length === 0) {
+                return { pile: 0, count: 1 };
+            }
+
+            let xorSum = piles.reduce((a, b) => a ^ b, 0);
+            const nonEmptyCount = nonEmpty.length;
+
+            function clampMove(pileIndex, count, maxInPile) {
+                return { pile: pileIndex, count: Math.min(count, Math.min(3, maxInPile)) };
+            }
+
+            if (gameMode === 'misere') {
+                const allOnes = nonEmpty.every(p => p.count === 1);
+                
+                if (allOnes) {
+                    if (nonEmptyCount % 2 === 0) {
+                        return { pile: nonEmpty[0].index, count: 1 };
+                    } else {
+                        return randomMove(nonEmpty);
+                    }
+                }
+
+                if (nonEmptyCount === 1 && nonEmpty[0].count > 1) {
+                    const p = nonEmpty[0];
+                    const idealTake = p.count - 1;
+                    return clampMove(p.index, idealTake, p.count);
+                }
+
+                const pilesGreaterThanOne = nonEmpty.filter(p => p.count > 1);
+                if (pilesGreaterThanOne.length === 1) {
+                    const p = pilesGreaterThanOne[0];
+                    const onesCount = nonEmptyCount - 1;
+                    if (onesCount % 2 === 0) {
+                        const idealTake = p.count - 1;
+                        return clampMove(p.index, idealTake, p.count);
+                    } else {
+                        return clampMove(p.index, p.count, p.count);
+                    }
+                }
+
+                if (xorSum !== 0) {
+                    for (const pile of nonEmpty) {
+                        const target = pile.count ^ xorSum;
+                        if (target < pile.count) {
+                            const take = pile.count - target;
+                            if (take >= 1 && take <= 3) {
+                                return { pile: pile.index, count: take };
+                            }
+                        }
+                    }
+                    
+                    for (const pile of nonEmpty) {
+                        const target = pile.count ^ xorSum;
+                        if (target < pile.count) {
+                            return clampMove(pile.index, pile.count - target, pile.count);
+                        }
+                    }
+                }
+
+                return randomMove(nonEmpty);
+
+            } else {
+                if (xorSum !== 0) {
+                    for (const pile of nonEmpty) {
+                        const target = pile.count ^ xorSum;
+                        if (target < pile.count) {
+                            const take = pile.count - target;
+                            if (take >= 1 && take <= 3) {
+                                return { pile: pile.index, count: take };
+                            }
+                        }
+                    }
+                    
+                    for (const pile of nonEmpty) {
+                        const target = pile.count ^ xorSum;
+                        if (target < pile.count) {
+                            return clampMove(pile.index, pile.count - target, pile.count);
+                        }
+                    }
+                }
+
+                return randomMove(nonEmpty);
+            }
+        }
+
+        function randomMove(nonEmpty) {
+            const pile = nonEmpty[Math.floor(Math.random() * nonEmpty.length)];
+            const maxTake = Math.min(3, pile.count);
+            const count = Math.floor(Math.random() * maxTake) + 1;
+            return { pile: pile.index, count };
+        }
+
+        function showRules() {
+            const content = document.getElementById('rules-content');
+            const modeExplanation = gameMode === 'misere'
+                ? '<span class="highlight">perd</span> la partie'
+                : '<span class="highlight">gagne</span> la partie';
+
+            content.innerHTML = `
+                <h3>Objectif</h3>
+                <p>Dans cette configuration, celui qui prend la dernière allumette ${modeExplanation}.</p>
+                
+                <h3>Déroulement</h3>
+                <ul>
+                    <li>La partie se joue à tour de rôle contre l'ordinateur</li>
+                    <li>À votre tour, sélectionnez un tas en cliquant dessus</li>
+                    <li>Choisissez ensuite de prendre 1, 2 ou 3 allumettes de ce tas</li>
+                    <li>Vous ne pouvez prendre des allumettes que d'un seul tas par tour</li>
+                </ul>
+
+                <h3>Configuration actuelle</h3>
+                <ul>
+                    <li>Mode : <strong>${gameMode === 'misere' ? 'Misère' : 'Normal'}</strong></li>
+                    <li>Nombre de tas : <strong>${piles.length}</strong></li>
+                </ul>
+
+                <h3>Options en cours de partie</h3>
+                <ul>
+                    <li><strong>Changer de mode</strong> : Basculer entre Misère et Normal</li>
+                    <li><strong>Échanger les joueurs</strong> : L'ordinateur prend votre place</li>
+                </ul>
+
+                <h3>Astuce</h3>
+                <p>La stratégie gagnante au jeu de Nim repose sur le calcul XOR des tailles de tas. 
+                   Essayez de laisser votre adversaire dans une position où le XOR de tous les tas est égal à 0 !</p>
+            `;
+
+            document.getElementById('rules-modal').classList.add('active');
+        }
+
+        function closeRules() {
+            document.getElementById('rules-modal').classList.remove('active');
+        }
+
+        function showConfig() {
+            document.getElementById('game-container').classList.remove('active');
+            document.getElementById('config-modal').classList.add('active');
+        }
+
+        updatePilesConfig();
+    </script>
+</body>
+</html>
